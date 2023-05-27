@@ -591,7 +591,7 @@ controller_router.post("/carrito/add", authenticateToken, (req, res) => {
       res.status(500).json({ error: 'Error al buscar en el carrito' });
     } else {
       if (result.length > 0) {
-        // Registro existente, realizar actualización
+
         conn.query('UPDATE carrito SET cantidad = ? WHERE id_concepto = ? AND id_articulo = ? AND id_invitado = ?', [cantidad, id_concepto, id_articulo, id_invitado], (error, result) => {
           if (error) {
             console.log("Error al actualizar el artículo en el carrito:", error);
