@@ -581,43 +581,6 @@ controller_router.get('/concepto/:id', authenticateToken, (req, res) => {
   });
 });
 
-
-controller_router.post("/carrito/add", authenticateToken, (req, res) => {
-  const { cantidad, id_concepto, id_articulo, id_invitado } = req.body;
-
-  conn.query('SELECT * FROM carrito WHERE id_concepto = ? AND id_articulo = ? AND id_invitado = ?', [id_concepto, id_articulo, id_invitado], (error, result) => {
-    if (error) {
-      console.log("Error al buscar en el carrito:", error);
-      res.status(500).json({ error: 'Error al buscar en el carrito' });
-    } else {
-      if (result.length > 0) {
-
-        conn.query('UPDATE carrito SET cantidad = ? WHERE id_concepto = ? AND id_articulo = ? AND id_invitado = ?', [cantidad, id_concepto, id_articulo, id_invitado], (error, result) => {
-          if (error) {
-            console.log("Error al actualizar el artículo en el carrito:", error);
-            res.status(500).json({ error: 'Error al actualizar el artículo en el carrito' });
-          } else {
-            console.log("El artículo actualizado exitosamente en el carrito");
-            res.status(200).json({ id_articulo, cantidad, id_concepto, message: "El artículo actualizado exitosamente en el carrito" });
-          }
-        });
-      } else {
-        // Registro no existe, realizar inserción
-        conn.query('INSERT INTO carrito SET ?', { cantidad, id_concepto, id_articulo, id_invitado }, (error, result) => {
-          if (error) {
-            console.log("Error al agregar el artículo al carrito:", error);
-            res.status(500).json({ error: 'Error al agregar el artículo al carrito' });
-          } else {
-            const newItemId = result.insertId;
-            console.log("El artículo agregado exitosamente al carrito");
-            res.status(200).json({ id: newItemId, id_articulo, cantidad, id_concepto, message: "El artículo agregado exitosamente al carrito" });
-          }
-        });
-      }
-    }
-  });
-});
-
 // agregar el usuario Invitado con id de Concepto introducido al tabla usuariosinvitados
 controller_router.post("/usuariosinvitados/add", authenticateToken, (req, res) => {
   const { id_usuario, id_concepto } = req.body;
@@ -644,7 +607,8 @@ controller_router.post("/usuariosinvitados/add", authenticateToken, (req, res) =
               console.error('Error al verificar el usuario invitado:', error);
               res.status(500).json({ error: 'Ocurrió un error al verificar el usuario invitado' });
             } else if (invitadosResults.length > 0) {
-              res.status(200).json({ message: 'El usuario ya está invitado con el mismo concepto' });
+              const InvitadoId = invitadosResults[0].id;
+              res.status(200).json({ id: InvitadoId, message: 'El usuario ya está invitado con el mismo concepto' });
             } else {
               // Insertar el nuevo usuario invitado 
               conn.query('INSERT INTO usuariosinvitados (id_usuario, id_concepto) VALUES (?, ?)', [id_usuario, id_concepto], (error, insertResults) => {
@@ -652,8 +616,9 @@ controller_router.post("/usuariosinvitados/add", authenticateToken, (req, res) =
                   console.error('Error al agregar el usuario a la tabla de invitados:', error);
                   res.status(500).json({ error: 'Ocurrió un error al agregar el usuario a la tabla de invitados' });
                 } else {
+                  const nuevoInvitadoId = insertResults.insertId;
                   console.log("Usuario agregado exitosamente a la tabla de invitados");
-                  res.status(200).json({ message: 'Usuario agregado exitosamente a la tabla de invitados' });
+                  res.status(200).json({ id: nuevoInvitadoId, message: 'Usuario agregado exitosamente a la tabla de invitados' });
                 }
               });
             }
@@ -664,7 +629,94 @@ controller_router.post("/usuariosinvitados/add", authenticateToken, (req, res) =
   });
 });
 
-// Obtener los artículos del carrito de un cliente
+// Obtener los clientes Invitados
+controller_router.get("/usuariosinvitados/:id", authenticateToken, (req, res) => {
+  const id = req.params.id;
+
+  conn.query(
+    "SELECT * FROM usuariosinvitados WHERE id = ?",
+    [id],
+    (error, results) => {
+      if (error) {
+        console.log("Error al obtener los clientes de la tabla usuariosinvitados:", error);
+        res.status(500).json({ error: 'Error al obtener los clientes de la tabla usuariosinvitados' });
+      } else {
+        res.json(results);
+      }
+    }
+  );
+});
+
+// Añadir Articulos al Carrito
+controller_router.post("/carrito/add", authenticateToken, (req, res) => {
+  const { cantidad, id_concepto, id_articulo, id_invitado } = req.body;
+
+  if (id_invitado !== null) {
+    // Actualizar registros con id_invitado no nulo
+    const updateQuery = 'UPDATE carrito SET cantidad = ? WHERE id_concepto = ? AND id_articulo = ? AND id_invitado = ?';
+    const updateValues = [cantidad, id_concepto, id_articulo, id_invitado];
+
+    conn.query(updateQuery, updateValues, (error, updateResult) => {
+      if (error) {
+        console.log("Error al actualizar el artículo en el carrito:", error);
+        res.status(500).json({ error: 'Error al actualizar el artículo en el carrito' });
+      } else {
+        if (updateResult.affectedRows > 0) {
+          console.log("El artículo actualizado exitosamente en el carrito");
+          res.status(200).json({ id_articulo, cantidad, id_concepto, message: "El artículo actualizado exitosamente en el carrito" });
+        } else {
+          // El registro no existe, realizar inserción
+          const insertQuery = 'INSERT INTO carrito SET ?';
+          const insertValues = { cantidad, id_concepto, id_articulo, id_invitado };
+
+          conn.query(insertQuery, insertValues, (error, insertResult) => {
+            if (error) {
+              console.log("Error al agregar el artículo al carrito:", error);
+              res.status(500).json({ error: 'Error al agregar el artículo al carrito' });
+            } else {
+              const newItemId = insertResult.insertId;
+              console.log("El artículo agregado exitosamente al carrito");
+              res.status(200).json({ id: newItemId, id_articulo, cantidad, id_concepto, message: "El artículo agregado exitosamente al carrito" });
+            }
+          });
+        }
+      }
+    });
+} else {
+    // Actualizar registros con id_invitado nulo
+    const updateQuery = 'UPDATE carrito SET cantidad = ? WHERE id_concepto = ? AND id_articulo = ? AND id_invitado IS NULL';
+    const updateValues = [cantidad, id_concepto, id_articulo];
+
+    conn.query(updateQuery, updateValues, (error, updateResult) => {
+      if (error) {
+        console.log("Error al actualizar el artículo en el carrito:", error);
+        res.status(500).json({ error: 'Error al actualizar el artículo en el carrito' });
+      } else {
+        if (updateResult.affectedRows > 0) {
+          console.log("El artículo actualizado exitosamente en el carrito");
+          res.status(200).json({ id_articulo, cantidad, id_concepto, message: "El artículo actualizado exitosamente en el carrito" });
+        } else {
+          // El registro no existe, realizar inserción
+          const insertQuery = 'INSERT INTO carrito SET ?';
+          const insertValues = { cantidad, id_concepto, id_articulo, id_invitado };
+
+          conn.query(insertQuery, insertValues, (error, insertResult) => {
+            if (error) {
+              console.log("Error al agregar el artículo al carrito:", error);
+              res.status(500).json({ error: 'Error al agregar el artículo al carrito' });
+            } else {
+              const newItemId = insertResult.insertId;
+              console.log("El artículo agregado exitosamente al carrito");
+              res.status(200).json({ id: newItemId, id_articulo, cantidad, id_concepto, message: "El artículo agregado exitosamente al carrito" });
+            }
+          });
+        }
+      }
+    });
+  }
+});
+
+// Obtener los artículos del carrito 
 controller_router.get("/carrito/:id_concepto", authenticateToken, (req, res) => {
   const id_concepto = req.params.id_concepto; // Obtén el id_concepto del cliente desde los parámetros de la ruta
 
@@ -681,8 +733,6 @@ controller_router.get("/carrito/:id_concepto", authenticateToken, (req, res) => 
     }
   );
 });
-
-
 
 
 // Ver los artículos añadidos por cada usuario invitado en un concepto específico
