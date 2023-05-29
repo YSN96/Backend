@@ -580,6 +580,23 @@ controller_router.get('/concepto/:id', authenticateToken, (req, res) => {
     }
   });
 });
+// Obtener los clientes Invitados
+controller_router.get("/usuariosinvitados/:id", authenticateToken, (req, res) => {
+  const id = req.params.id;
+  conn.query( 'SELECT * FROM usuariosinvitados WHERE id = ?', [id], (error, results, fields) => {
+      if (error) {
+        console.log("Error al obtener los clientes de la tabla usuariosinvitados:", error);
+        res.status(500).json({ error: 'Error al obtener los clientes de la tabla usuariosinvitados' });
+      } else if (results.length === 0) {
+        console.log("Usuario no encontrado");
+        res.status(404).json({ error: "Usuario no encontrado" });
+      } else {
+        console.log("Usuario Invitado obtenido exitosamente");
+        res.status(200).json(results[0]);
+      }
+    }
+  );
+});
 
 // agregar el usuario Invitado con id de Concepto introducido al tabla usuariosinvitados
 controller_router.post("/usuariosinvitados/add", authenticateToken, (req, res) => {
@@ -629,23 +646,7 @@ controller_router.post("/usuariosinvitados/add", authenticateToken, (req, res) =
   });
 });
 
-// Obtener los clientes Invitados
-controller_router.get("/usuariosinvitados/:id", authenticateToken, (req, res) => {
-  const id = req.params.id;
 
-  conn.query(
-    "SELECT * FROM usuariosinvitados WHERE id = ?",
-    [id],
-    (error, results) => {
-      if (error) {
-        console.log("Error al obtener los clientes de la tabla usuariosinvitados:", error);
-        res.status(500).json({ error: 'Error al obtener los clientes de la tabla usuariosinvitados' });
-      } else {
-        res.json(results);
-      }
-    }
-  );
-});
 
 // Añadir Articulos al Carrito
 controller_router.post("/carrito/add", authenticateToken, (req, res) => {
@@ -741,7 +742,7 @@ controller_router.get("/carrito/:id_concepto/:id_invitado",authenticateToken, (r
   const id_invitado = req.params.id_invitado;
 
   conn.query(
-    "SELECT usuariosinvitados.id_usuario, articulos.* FROM usuariosinvitados JOIN carrito ON usuariosinvitados.id_concepto = carrito.id_concepto AND usuariosinvitados.id = carrito.id_invitado JOIN articulos ON carrito.id_articulo = articulos.id_articulo WHERE carrito.id_concepto = ? AND carrito.id_invitado = ?  ",
+    "SELECT usuariosinvitados.id_usuario, carrito.cantidad, articulos.* FROM usuariosinvitados JOIN carrito ON usuariosinvitados.id_concepto = carrito.id_concepto AND usuariosinvitados.id = carrito.id_invitado JOIN articulos ON carrito.id_articulo = articulos.id_articulo WHERE carrito.id_concepto = ? AND carrito.id_invitado = ?  ",
     [id_concepto, id_invitado],
     (error, results) => {
       if (error) {
