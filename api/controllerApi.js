@@ -754,4 +754,78 @@ controller_router.get("/carrito/:id_concepto/:id_invitado",authenticateToken, (r
     }
   );
 });
+
+// Actualizar la cantidad de un artículo en el carrito
+controller_router.put("/carrito/:id_carrito", authenticateToken, (req, res) => {
+  const id_carrito = req.params.id_carrito; // Obtén el id_carrito desde los parámetros de la ruta
+  const { cantidad } = req.body; // Obtén la nueva cantidad desde el cuerpo de la solicitud
+
+  conn.query(
+    "UPDATE carrito SET cantidad = ? WHERE id_carrito = ?",
+    [cantidad, id_carrito],
+    (error, updateResult) => {
+      if (error) {
+        console.log("Error al actualizar la cantidad del artículo en el carrito:", error);
+        res.status(500).json({ error: 'Error al actualizar la cantidad del artículo en el carrito' });
+      } else {
+        if (updateResult.affectedRows > 0) {
+          console.log("La cantidad del artículo actualizada exitosamente en el carrito");
+          res.status(200).json({ id_carrito, cantidad, message: "La cantidad del artículo actualizada exitosamente en el carrito" });
+        } else {
+          console.log("No se encontró el artículo en el carrito");
+          res.status(404).json({ error: 'No se encontró el artículo en el carrito' });
+        }
+      }
+    }
+  );
+});
+
+// Eliminar un artículo del carrito
+controller_router.delete("/carrito/:id_carrito", authenticateToken, (req, res) => {
+  const id_carrito = req.params.id_carrito; // Obtén el id_carrito desde los parámetros de la ruta
+
+  conn.query(
+    "DELETE FROM carrito WHERE id_carrito = ?",
+    [id_carrito],
+    (error, deleteResult) => {
+      if (error) {
+        console.log("Error al eliminar el artículo del carrito:", error);
+        res.status(500).json({ error: 'Error al eliminar el artículo del carrito' });
+      } else {
+        if (deleteResult.affectedRows > 0) {
+          console.log("El artículo ha sido eliminado exitosamente del carrito");
+          res.status(200).json({ id_carrito, message: "El artículo ha sido eliminado exitosamente del carrito" });
+        } else {
+          console.log("No se encontró el artículo en el carrito");
+          res.status(404).json({ error: 'No se encontró el artículo en el carrito' });
+        }
+      }
+    }
+  );
+});
+
+// Actualizar el estado de un concepto
+controller_router.put("/concepto/:id_concepto", authenticateToken, (req, res) => {
+  const id_concepto = req.params.id_concepto; 
+  const { estado } = req.body;
+
+  conn.query(
+    "UPDATE concepto SET estado = ? WHERE id_concepto = ?",
+    [estado, id_concepto],
+    (error, updateResult) => {
+      if (error) {
+        console.log("Error al actualizar el estado del concepto:", error);
+        res.status(500).json({ error: 'Error al actualizar el estado del concepto' });
+      } else {
+        if (updateResult.affectedRows > 0) {
+          console.log("El estado del concepto actualizada exitosamente ");
+          res.status(200).json({ id_concepto, estado, message: "El estado del concepto actualizada exitosamente" });
+        } else {
+          console.log("No se encontró el concepto");
+          res.status(404).json({ error: 'No se encontró concepto' });
+        }
+      }
+    }
+  );
+});
 module.exports = controller_router;
