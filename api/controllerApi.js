@@ -187,6 +187,28 @@ controller_router.get("/user/clientes/:id", authenticateToken, (req, res) => {
   );
 });
 
+// Obtener Usuario admin
+controller_router.get("/user/admin", authenticateToken, (req, res) => {
+
+  conn.query(
+    'SELECT nombre, apellido, direccion, poblacion,provincia, codigopostal, mobile FROM usuarios WHERE roles = "ROLE_ADMIN"',
+    (error, results) => {
+      if (error) {
+        console.error("Error al buscar el usuario:", error);
+        res.status(500).json({ error: "Error al obtener el usuario" });
+      } else {
+        if (results.length === 0) {
+          // El usuario no existe
+          res.status(404).json({ error: "Usuario no encontrado" });
+        } else {
+          console.log("Usuario encontrado correctamente");
+          res.status(200).json(results[0]);
+        }
+      }
+    }
+  );
+});
+
 // Actualizar un cliente por ID
 controller_router.put("/user/update/:id", authenticateToken, (req, res) => {
   const clientId = req.params.id;
@@ -722,14 +744,15 @@ controller_router.get("/carrito/:id_concepto", authenticateToken, (req, res) => 
   const id_concepto = req.params.id_concepto; // Obtén el id_concepto del cliente desde los parámetros de la ruta
 
   conn.query(
-    "SELECT carrito.id_carrito, carrito.cantidad, articulos.* FROM carrito JOIN articulos ON carrito.id_articulo = articulos.id_articulo WHERE carrito.id_concepto = ?",
+    "SELECT carrito.id_carrito, carrito.cantidad, carrito.id_invitado, articulos.* FROM carrito JOIN articulos ON carrito.id_articulo = articulos.id_articulo WHERE carrito.id_concepto = ?",
     [id_concepto],
     (error, results) => {
       if (error) {
         console.log("Error al obtener los artículos del carrito:", error);
         res.status(500).json({ error: 'Error al obtener los artículos del carrito' });
       } else {
-        res.json(results);
+        const id_invitado = results[0].id_invitado; // Obtén la ID de invitado del primer resultado de la consulta
+        res.json({ id_concepto, id_invitado, results });
       }
     }
   );
@@ -737,24 +760,27 @@ controller_router.get("/carrito/:id_concepto", authenticateToken, (req, res) => 
 
 
 // Ver los artículos añadidos por cada usuario invitado en un concepto específico
-controller_router.get("/carrito/:id_concepto/:id_invitado",authenticateToken, (req, res) => {
+controller_router.get("/carrito/:id_concepto/:id_invitado", authenticateToken, (req, res) => {
   const id_concepto = req.params.id_concepto; // Obtén el id_concepto desde los parámetros de la ruta
   const id_invitado = req.params.id_invitado;
 
   conn.query(
-    "SELECT usuariosinvitados.id_usuario, carrito.cantidad, articulos.* FROM usuariosinvitados JOIN carrito ON usuariosinvitados.id_concepto = carrito.id_concepto AND usuariosinvitados.id = carrito.id_invitado JOIN articulos ON carrito.id_articulo = articulos.id_articulo WHERE carrito.id_concepto = ? AND carrito.id_invitado = ?  ",
+    "SELECT usuariosinvitados.id_usuario, carrito.id_carrito, carrito.cantidad, articulos.* FROM usuariosinvitados JOIN carrito ON usuariosinvitados.id_concepto = carrito.id_concepto AND usuariosinvitados.id = carrito.id_invitado JOIN articulos ON carrito.id_articulo = articulos.id_articulo WHERE carrito.id_concepto = ? AND carrito.id_invitado = ?",
     [id_concepto, id_invitado],
     (error, results) => {
       if (error) {
         console.log("Error al obtener los artículos añadidos por los usuarios invitados:", error);
         res.status(500).json({ error: 'Error al obtener los artículos añadidos por los usuarios invitados' });
       } else {
-        res.json(results);
+        const data = {
+          id_invitado: id_invitado,
+          results: results
+        };
+        res.json(data);
       }
     }
   );
 });
-
 // Actualizar la cantidad de un artículo en el carrito
 controller_router.put("/carrito/:id_carrito", authenticateToken, (req, res) => {
   const id_carrito = req.params.id_carrito; // Obtén el id_carrito desde los parámetros de la ruta

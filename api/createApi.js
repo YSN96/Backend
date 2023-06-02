@@ -65,7 +65,6 @@ const crearTablaConcepto = `
 CREATE TABLE IF NOT EXISTS concepto (
   id_concepto BIGINT PRIMARY KEY UNIQUE,
   estado BOOLEAN NOT NULL,
-  total DECIMAL(10, 2),
   id_usuario INT
 );
 `;
