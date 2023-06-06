@@ -1,7 +1,7 @@
 const models = require("../db/db");
 const express = require("express");
 const data_router = express.Router();
-const mysql = require("mysql");
+const mysql = require("mysql2");
 
 let conn = mysql.createConnection(models.mysql);
 conn.connect();
@@ -11,7 +11,7 @@ conn.on("error", (err) => {
 });
 
 // DATABASE CREATE
-const crearBaseDeDatos = `CREATE DATABASE IF NOT EXISTS cenaNode`;
+const crearBaseDeDatos = `CREATE DATABASE IF NOT EXISTS cena`;
 
 conn.query(crearBaseDeDatos, (err, results, fields) => {
   if (err) {
@@ -21,12 +21,12 @@ conn.query(crearBaseDeDatos, (err, results, fields) => {
   console.log("Base de datos creada exitosamente o ya existe");
   
   // Conectar a la base de datos creada y crear las tablas
-  conn.query(`USE cenaNode`, (err, results, fields) => {
+  conn.query(`USE cena`, (err, results, fields) => {
     if (err) {
       console.error("Error al conectar a la base de datos:", err);
       return;
     }
-    console.log('Base de datos seleccionada');
+    
     // TABLA USUARIOS
 
     const crearTablaUsuario = `
