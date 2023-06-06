@@ -11,7 +11,7 @@ conn.on("error", (err) => {
 });
 
 // DATABASE CREATE
-const crearBaseDeDatos = `CREATE DATABASE IF NOT EXISTS cenaNode2`;
+const crearBaseDeDatos = `CREATE DATABASE IF NOT EXISTS cenaNode`;
 
 conn.query(crearBaseDeDatos, (err, results, fields) => {
   if (err) {
@@ -21,7 +21,7 @@ conn.query(crearBaseDeDatos, (err, results, fields) => {
   console.log("Base de datos creada exitosamente o ya existe");
   
   // Conectar a la base de datos creada y crear las tablas
-  conn.query(`USE cenaNode2`, (err, results, fields) => {
+  conn.query(`USE cenaNode`, (err, results, fields) => {
     if (err) {
       console.error("Error al conectar a la base de datos:", err);
       return;
